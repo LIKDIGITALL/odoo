@@ -1,12 +1,22 @@
 /** @odoo-module **/
-import { click, getFixture, patchWithCleanup, editInput, nextTick } from "@web/../tests/helpers/utils";
+import {
+    click,
+    getFixture,
+    patchWithCleanup,
+    triggerEvent,
+    editInput,
+    clickSave,
+} from "@web/../tests/helpers/utils";
 import { makeView, setupViewRegistries } from "@web/../tests/views/helpers";
-import { patchUiSize } from "@mail/../tests/helpers/patch_ui_size";
 import { NameAndSignature } from "@web/core/signature/name_and_signature";
-import { SignatureWidget } from "@web/views/widgets/signature/signature";
 
 let serverData;
 let target;
+
+function getUnique(target) {
+    const src = target.dataset.src;
+    return new URL(src).searchParams.get("unique");
+}
 
 QUnit.module("Widgets", (hooks) => {
     hooks.beforeEach(() => {
@@ -21,8 +31,8 @@ QUnit.module("Widgets", (hooks) => {
                             type: "many2one",
                             relation: "product",
                         },
+                        __last_update: { type: "datetime" },
                         sign: { string: "Signature", type: "binary" },
-                        signature: { string: "", type: "string" },
                     },
                     records: [
                         {
@@ -155,70 +165,108 @@ QUnit.module("Widgets", (hooks) => {
         assert.containsNone(target, ".modal .modal-body a.o_web_sign_auto_button");
     });
 
-    QUnit.test("Signature widget works inside of a dropdown", async (assert) => {
-        assert.expect(7);
-        patchWithCleanup(SignatureWidget.prototype, {
-            async onClickSignature() {
-                await this._super.apply(this, arguments);
-                assert.step("onClickSignature");
-            },
-            async uploadSignature({signatureImage}) {
-                await this._super.apply(this, arguments);
-                assert.step("uploadSignature");
-            },
-        });
+    QUnit.test(
+        "clicking save manually after changing signature should change the unique of the image src",
+        async function (assert) {
+            serverData.models.partner.fields.foo = { type: "char" };
+            serverData.models.partner.onchanges = { foo: () => {} };
 
-        // force mobile view
-        patchUiSize({ width: 225 });
+            const rec = serverData.models.partner.records.find((rec) => rec.id === 1);
+            rec.sign = "3 kb";
+            rec.__last_update = "2022-08-05 08:37:00"; // 1659688620000
 
-        await makeView({
-            type: "form",
-            resModel: "partner",
-            resId: 1,
-            serverData,
-            arch: `
-                <form>
-                    <header>
-                        <button string="Dummy"/>
-                        <widget name="signature" string="Sign" full_name="display_name"/>
-                    </header>
-                    <field name="display_name" />
-                </form>
-            `,
-            mockRPC: async (route, args) => {
-                if (route === "/web/sign/get_fonts/") {
-                    return {};
-                }
-            },
-        });
+            // 1659692220000, 1659695820000
+            const lastUpdates = ["2022-08-05 09:37:00", "2022-08-05 10:37:00"];
+            let index = 0;
 
-        // change display_name to enable auto-sign feature
-        await editInput(target, ".o_field_widget[name=display_name] input", "test");
+            await makeView({
+                type: "form",
+                resModel: "partner",
+                resId: 1,
+                serverData,
+                arch: /* xml */ `
+                    <form>
+                        <field name="foo" />
+                        <field name="sign" widget="signature" />
+                    </form>`,
+                mockRPC(route, { method, args }) {
+                    if (route === "/web/sign/get_fonts/") {
+                        return {};
+                    }
+                    if (method === "write") {
+                        assert.step("write");
+                        args[1].__last_update = lastUpdates[index];
+                        args[1].sign = "4 kb";
+                        index++;
+                    }
+                },
+            });
+            assert.strictEqual(
+                getUnique(target.querySelector(".o_field_signature img")),
+                "1659688620000"
+            );
 
-        // open the signature dialog
-        await click(target, ".o_statusbar_buttons .dropdown-toggle");
-        await click(target, ".o_widget_signature button.o_sign_button");
+            await click(target, ".o_field_signature img", true);
+            assert.containsOnce(target, ".modal canvas");
 
-        assert.containsOnce(target, ".modal-dialog", "Should have one modal opened");
+            let canvas = target.querySelector(".modal canvas");
+            canvas.setAttribute("width", "2px");
+            canvas.setAttribute("height", "2px");
+            let ctx = canvas.getContext("2d");
+            ctx.beginPath();
+            ctx.strokeStyle = "blue";
+            ctx.moveTo(0, 0);
+            ctx.lineTo(0, 2);
+            ctx.stroke();
+            await triggerEvent(target, ".o_web_sign_signature", "change");
+            await click(target, ".modal-footer .btn-primary");
 
-        // use auto-sign feature, might take a while
-        await click(target, ".o_web_sign_auto_button");
+            const MYB64 = `iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAAXNSR0IArs4c6QAAABRJREFUGFdjZGD438DAwNjACGMAACQlBAMW7JulAAAAAElFTkSuQmCC`;
+            assert.strictEqual(
+                target.querySelector("div[name=sign] img").dataset.src,
+                `data:image/png;base64,${MYB64}`
+            );
 
-        assert.containsOnce(target, ".modal-footer button.btn-primary");
+            await editInput(target, ".o_field_widget[name='foo'] input", "grrr");
+            assert.strictEqual(
+                target.querySelector("div[name=sign] img").dataset.src,
+                `data:image/png;base64,${MYB64}`
+            );
 
-        let maxDelay = 100;
-        while (target.querySelector(".modal-footer button.btn-primary")["disabled"] && maxDelay > 0) {
-            await nextTick();
-            maxDelay--;
+            await clickSave(target);
+            assert.verifySteps(["write"]);
+            assert.strictEqual(
+                getUnique(target.querySelector(".o_field_signature img")),
+                "1659692220000"
+            );
+
+            await click(target, ".o_field_signature img", true);
+            assert.containsOnce(target, ".modal canvas");
+
+            canvas = target.querySelector(".modal canvas");
+            canvas.setAttribute("width", "2px");
+            canvas.setAttribute("height", "2px");
+            ctx = canvas.getContext("2d");
+            ctx.beginPath();
+            ctx.strokeStyle = "blue";
+            ctx.moveTo(0, 0);
+            ctx.lineTo(2, 0);
+            ctx.stroke();
+            await triggerEvent(target, ".o_web_sign_signature", "change");
+            await click(target, ".modal-footer .btn-primary");
+
+            const MYB64_2 = `iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAAXNSR0IArs4c6QAAABVJREFUGFdjZGD438DAwMDACCJAAAAWHgGCN0++VgAAAABJRU5ErkJggg==`;
+            assert.notOk(MYB64 === MYB64_2);
+            assert.strictEqual(
+                target.querySelector("div[name=sign] img").dataset.src,
+                `data:image/png;base64,${MYB64_2}`
+            );
+            await clickSave(target);
+            assert.verifySteps(["write"]);
+            assert.strictEqual(
+                getUnique(target.querySelector(".o_field_signature img")),
+                "1659695820000"
+            );
         }
-
-        assert.equal(maxDelay > 0, true, "Timeout exceeded");
-
-        // close the dialog and save the signature
-        await click(target, ".modal-footer button.btn-primary:enabled");
-
-        assert.containsNone(target, ".modal-dialog", "Should have no modal opened");
-
-        assert.verifySteps(["onClickSignature", "uploadSignature"], "An error has occurred while signing");
-    });
+    );
 });

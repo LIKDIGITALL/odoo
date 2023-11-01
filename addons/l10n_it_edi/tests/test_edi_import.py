@@ -117,10 +117,45 @@ class TestItEdiImport(TestItEdi):
 
         with patch.object(sql_db.Cursor, "commit", self.mock_commit):
             for dummy in range(2):
-                fattura_pa._save_incoming_attachment_fattura_pa(proxy_user, '9999999999', self.invoice_filename2, content)
+                fattura_pa._save_incoming_attachment_fattura_pa(
+                    proxy_user=proxy_user,
+                    id_transaction='9999999999',
+                    filename=self.invoice_filename2,
+                    content=content,
+                    key=None)
 
         # There should be one attachement with this filename
         attachments = self.env['ir.attachment'].search([('name', '=', self.invoice_filename2)])
         self.assertEqual(len(attachments), 1)
         invoices = self.env['account.move'].search([('payment_reference', '=', 'TWICE_TEST')])
         self.assertEqual(len(invoices), 1)
+
+    def test_receive_bill_with_global_discount(self):
+        content = self.with_applied_xpath(
+            etree.fromstring(self.invoice_content),
+            '''
+                <xpath expr="//FatturaElettronicaBody/DatiGenerali/DatiGeneraliDocumento" position="inside">
+                    <ScontoMaggiorazione>
+                        <Tipo>SC</Tipo>
+                        <Importo>2</Importo>
+                    </ScontoMaggiorazione>
+                </xpath>
+            ''')
+        invoices = self.edi_format._create_invoice_from_xml_tree(self.invoice_filename2, content)
+
+        self.assertRecordValues(invoices, [{
+            'amount_untaxed': 3.0,
+            'amount_tax': 1.1,
+        }])
+        self.assertRecordValues(invoices.invoice_line_ids, [
+            {
+                'quantity': 5.0,
+                'name': 'DESCRIZIONE DELLA FORNITURA',
+                'price_unit': 1.0,
+            },
+            {
+                'quantity': 1.0,
+                'name': 'SCONTO',
+                'price_unit': -2,
+            }
+        ])

@@ -13,7 +13,7 @@ msgstr ""
 "POT-Creation-Date: 2023-02-02 17:05+0000\n"
 "PO-Revision-Date: 2023-02-03 07:06+0000\n"
 "Last-Translator: Larissa Manderfeld, 2023\n"
-"Language-Team: German (https://www.transifex.com/odoo/teams/41243/de/)\n"
+"Language-Team: German (https://app.transifex.com/odoo/teams/41243/de/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: \n"
@@ -156,17 +156,17 @@ msgstr "00 - Umsätze, die einer Sonderregelung unterliegen"
 #. module: l10n_be
 #: model:account.report.line,name:l10n_be.tax_report_line_01
 msgid "01 - Operations subject to 6% VAT"
-msgstr "01 - Umsätze, 6 % MwSt. unterliegen "
+msgstr "01 - Umsätze, die 6 % MwSt. unterliegen "
 
 #. module: l10n_be
 #: model:account.report.line,name:l10n_be.tax_report_line_02
 msgid "02 - Operations subject to 12% VAT"
-msgstr "02 - Umsätze, 12 % MwSt. unterliegen "
+msgstr "02 - Umsätze, die 12 % MwSt. unterliegen "
 
 #. module: l10n_be
 #: model:account.report.line,name:l10n_be.tax_report_line_03
 msgid "03 - Operations subject to 21% VAT"
-msgstr "03 - Umsätze, 21 % MwSt. unterliegen "
+msgstr "03 - Umsätze, die 21 % MwSt. unterliegen "
 
 #. module: l10n_be
 #: model:account.tax,description:l10n_be.1_attn_VAT-IN-V81-12
@@ -559,12 +559,12 @@ msgstr "49 - Gutschriften für die übrigen Umsätze aus Rahmen II"
 #. module: l10n_be
 #: model:account.report.line,name:l10n_be.tax_report_line_54
 msgid "54 - VAT on operations in grids [01], [02] and [03]"
-msgstr "54 - MwSt. auf Umsätze erklärt in den Rastern [01], [02] und [03]"
+msgstr "54 - MwSt. auf Umsätze aus den Rastern [01], [02] und [03]"
 
 #. module: l10n_be
 #: model:account.report.line,name:l10n_be.tax_report_line_55
 msgid "55 - VAT on operations in grids [86] and [88]"
-msgstr "55 - MwSt. auf Umsätze erklärt in den Rastern [86] und [88]"
+msgstr "55 - MwSt. auf Umsätze aus den Rastern [86] und [88]"
 
 #. module: l10n_be
 #: model:account.report.line,name:l10n_be.tax_report_line_56
@@ -572,8 +572,8 @@ msgid ""
 "56 - VAT on operations in grid [87], with the exception of imports with "
 "reverse charge"
 msgstr ""
-"56 - MwSt. auf Umsätze erklärt in Raster [87], ausschließlich der Einfuhren "
-"mit Verlegung der Erhebung"
+"56 - MwSt. auf Umsätze aus Raster [87], ausschließlich der Einfuhren mit "
+"Verlegung der Erhebung"
 
 #. module: l10n_be
 #: model:account.report.line,name:l10n_be.tax_report_line_57
@@ -1044,7 +1044,7 @@ msgstr ""
 #: model:account.group.template,name:l10n_be.be_group_69
 #: model:account.group.template,name:l10n_be.be_group_79
 msgid "Affectations et prélèvements"
-msgstr ""
+msgstr "Affectations et prélèvements"
 
 #. module: l10n_be
 #: model:account.group,name:l10n_be.1_be_group_660
@@ -1824,7 +1824,7 @@ msgstr "Eingefordertes, noch nicht eingezahltes Kapital"
 #: model:account.group,name:l10n_be.2_be_group_10
 #: model:account.group.template,name:l10n_be.be_group_10
 msgid "Capital"
-msgstr ""
+msgstr "Kapital"
 
 #. module: l10n_be
 #: model:account.group,name:l10n_be.1_be_group_410
@@ -4272,7 +4272,7 @@ msgstr ""
 #. module: l10n_be
 #: model:account.report.line,name:l10n_be.tax_report_title_operations
 msgid "Operations"
-msgstr "Vorgänge"
+msgstr "Umsätze"
 
 #. module: l10n_be
 #: model:account.account,name:l10n_be.1_a099
@@ -6337,8 +6337,8 @@ msgstr "V Abzugsfähig"
 
 #. module: l10n_be
 #: model:account.report,name:l10n_be.tax_report_vat
-msgid "VAT Report"
-msgstr "MwSt.-Bericht"
+msgid "VAT Return"
+msgstr "MwSt.-Erklärung"
 
 #. module: l10n_be
 #: model:account.account,name:l10n_be.1_a4512
